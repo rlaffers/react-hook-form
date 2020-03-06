@@ -515,7 +515,7 @@ export function useForm<
           return shouldUpdateState && reRender();
         }
 
-        let validationErrors: {
+        const validationErrors: {
           [key: string]: FieldErrors<FormValues>;
         } = {};
         if (shouldValidateCallback) {
@@ -553,7 +553,7 @@ export function useForm<
         // consider all validation errors. Use the validationScope option to configure this behavior.
         // This is relevant in onBlur and onChange modes only. onSubmit validation always includes
         // validation errors from all fields.
-        let relevantFieldNames: Set<string> = new Set();
+        const relevantFieldNames: Set<string> = new Set();
         switch (true) {
           case !shouldValidateCallback ||
             validationScope === VALIDATION_SCOPE.currentField:
@@ -1184,9 +1184,10 @@ export function useForm<
     () => () => {
       isUnMount.current = true;
       fieldsRef.current &&
-        Object.values(fieldsRef.current).forEach(
-          (field: Field | undefined): void =>
-            removeFieldEventListenerAndRef(field, true),
+        Object.values(
+          fieldsRef.current,
+        ).forEach((field: Field | undefined): void =>
+          removeFieldEventListenerAndRef(field, true),
         );
     },
     [removeFieldEventListenerAndRef],

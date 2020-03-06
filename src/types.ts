@@ -19,7 +19,7 @@ export type DeepPartial<T> = {
     ? Array<DeepPartial<U>>
     : T[P] extends ReadonlyArray<infer U>
     ? ReadonlyArray<DeepPartial<U>>
-    : DeepPartial<T[P]>
+    : DeepPartial<T[P]>;
 };
 
 export type ValidationMode = {
@@ -132,7 +132,7 @@ export type NestDataObject<FormValues> = {
     ? FieldError
     : FormValues[Key] extends object
     ? FieldErrors<FormValues[Key]>
-    : FieldError
+    : FieldError;
 };
 
 export type FieldErrors<FormValues> = NestDataObject<FormValues>;
