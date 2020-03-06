@@ -19,7 +19,7 @@ export type DeepPartial<T> = {
     ? Array<DeepPartial<U>>
     : T[P] extends ReadonlyArray<infer U>
     ? ReadonlyArray<DeepPartial<U>>
-    : DeepPartial<T[P]>;
+    : DeepPartial<T[P]>
 };
 
 export type ValidationMode = {
@@ -29,6 +29,14 @@ export type ValidationMode = {
 };
 
 export type Mode = keyof ValidationMode;
+
+export type ValidationScopeEnum = {
+  currentField: 'currentField';
+  allRegisteredFields: 'allRegisteredFields';
+  allSchemaFields: 'allSchemaFields';
+};
+
+export type ValidationScope = keyof ValidationScopeEnum;
 
 export type OnSubmit<FormValues extends FieldValues> = (
   data: FormValues,
@@ -60,6 +68,7 @@ export type UseFormOptions<
   validationContext: ValidationContext;
   submitFocusError: boolean;
   validateCriteriaMode: 'firstError' | 'all';
+  validationScope: ValidationScope;
 }>;
 
 export type MutationWatcher = {
@@ -123,7 +132,7 @@ export type NestDataObject<FormValues> = {
     ? FieldError
     : FormValues[Key] extends object
     ? FieldErrors<FormValues[Key]>
-    : FieldError;
+    : FieldError
 };
 
 export type FieldErrors<FormValues> = NestDataObject<FormValues>;

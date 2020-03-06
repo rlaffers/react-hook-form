@@ -1,4 +1,4 @@
-import { ValidationMode } from './types';
+import { ValidationMode, ValidationScopeEnum } from './types';
 
 export const VALIDATION_MODE: ValidationMode = {
   onBlur: 'onBlur',
@@ -30,3 +30,9 @@ export const REGEX_IS_DEEP_PROP = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1
 export const REGEX_IS_PLAIN_PROP = /^\w*$/;
 export const REGEX_PROP_NAME = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
 export const REGEX_ESCAPE_CHAR = /\\(\\)?/g;
+
+export const VALIDATION_SCOPE: ValidationScopeEnum = {
+  currentField: 'currentField',
+  allRegisteredFields: 'allRegisteredFields',
+  allSchemaFields: 'allSchemaFields',
+};

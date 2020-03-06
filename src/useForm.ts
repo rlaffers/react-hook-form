@@ -37,7 +37,12 @@ import isMultipleSelect from './utils/isMultipleSelect';
 import modeChecker from './utils/validationModeChecker';
 import isNullOrUndefined from './utils/isNullOrUndefined';
 import isHTMLElement from './utils/isHTMLElement';
-import { EVENTS, UNDEFINED, VALIDATION_MODE } from './constants';
+import {
+  EVENTS,
+  UNDEFINED,
+  VALIDATION_MODE,
+  VALIDATION_SCOPE,
+} from './constants';
 import { FormContextValues } from './contextTypes';
 import {
   DeepPartial,
@@ -77,6 +82,7 @@ export function useForm<
   defaultValues = {},
   submitFocusError = true,
   validateCriteriaMode,
+  validationScope = VALIDATION_SCOPE.currentField,
 }: UseFormOptions<FormValues, ValidationContext> = {}): FormContextValues<
   FormValues
 > {
@@ -142,7 +148,7 @@ export function useForm<
       error: FieldErrors<FormValues>,
       shouldRender?,
       skipReRender?,
-    ): boolean | void => {
+    ): boolean => {
       let shouldReRender =
         shouldRender ||
         shouldUpdateWithError<FormValues>({
@@ -174,6 +180,7 @@ export function useForm<
         reRender();
         return true;
       }
+      return false;
     },
     [reRender, shouldValidateCallback],
   );
@@ -477,7 +484,6 @@ export function useForm<
         const errors = errorsRef.current;
         const field = fields[name];
         const currentError = get(errors, name);
-        let error;
 
         if (!field) {
           return;
@@ -509,6 +515,9 @@ export function useForm<
           return shouldUpdateState && reRender();
         }
 
+        let validationErrors: {
+          [key: string]: FieldErrors<FormValues>;
+        } = {};
         if (shouldValidateCallback) {
           const { errors } = await validateWithSchema<
             FormValues,
@@ -520,25 +529,61 @@ export function useForm<
             validationResolver,
             validationContext,
           );
+          Object.entries(errors).forEach(([fieldName, fieldError]) => {
+            validationErrors[fieldName] = fieldError as FieldErrors<FormValues>;
+          });
           const previousFormIsValid = isValidRef.current;
           isValidRef.current = isEmptyObject(errors);
-
-          error = (get(errors, name)
-            ? { [name]: get(errors, name) }
-            : {}) as FieldErrors<FormValues>;
 
           if (previousFormIsValid !== isValidRef.current) {
             shouldUpdateState = true;
           }
         } else {
-          error = await validateField<FormValues>(
+          validationErrors[name] = await validateField<FormValues>(
             fieldsRef,
             validateAllFieldCriteria,
             field,
           );
         }
 
-        if (!shouldRenderBaseOnError(name, error) && shouldUpdateState) {
+        let reRendered = false;
+        // By the default, only validation errors relevant for currently registered form fields are
+        // relevant for re-rendering, and returned from the hook. In multi-tab forms, or forms with
+        // interrelated fields (field relations can specified by the validationSchema) we need to
+        // consider all validation errors. Use the validationScope option to configure this behavior.
+        // This is relevant in onBlur and onChange modes only. onSubmit validation always includes
+        // validation errors from all fields.
+        let relevantFieldNames: Set<string> = new Set();
+        switch (true) {
+          case !shouldValidateCallback ||
+            validationScope === VALIDATION_SCOPE.currentField:
+            relevantFieldNames.add(name);
+            break;
+
+          case validationScope === VALIDATION_SCOPE.allRegisteredFields:
+            [name, ...Object.keys(fieldsRef.current)].forEach(fieldName =>
+              relevantFieldNames.add(fieldName),
+            );
+            break;
+
+          case validationScope === VALIDATION_SCOPE.allSchemaFields:
+            [
+              name,
+              ...Object.keys(fieldsRef.current),
+              ...Object.keys(validationErrors),
+            ].forEach(fieldName => relevantFieldNames.add(fieldName));
+            break;
+        }
+
+        relevantFieldNames.forEach(fieldName => {
+          const fieldError = (get(validationErrors, fieldName)
+            ? { [fieldName]: get(validationErrors, fieldName) }
+            : {}) as FieldErrors<FormValues>;
+          reRendered =
+            shouldRenderBaseOnError(fieldName, fieldError) || reRendered;
+        });
+
+        if (!reRendered && shouldUpdateState) {
           reRender();
         }
       };
@@ -1139,10 +1184,9 @@ export function useForm<
     () => () => {
       isUnMount.current = true;
       fieldsRef.current &&
-        Object.values(
-          fieldsRef.current,
-        ).forEach((field: Field | undefined): void =>
-          removeFieldEventListenerAndRef(field, true),
+        Object.values(fieldsRef.current).forEach(
+          (field: Field | undefined): void =>
+            removeFieldEventListenerAndRef(field, true),
         );
     },
     [removeFieldEventListenerAndRef],
