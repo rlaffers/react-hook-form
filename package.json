@@ -38,9 +38,6 @@
     "react-hooks"
   ],
   "repository": "git://github.com/rlaffers/react-hook-form.git",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  },
   "homepage": "https://www.react-hook-form.com",
   "author": "<bluebill1049@hotmail.com>",
   "license": "MIT",
